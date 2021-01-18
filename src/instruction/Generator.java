@@ -1,7 +1,7 @@
 package instruction;
 
 import analyser.Func;
-import analyser.GlobalVar;
+import analyser.GVar;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,17 +38,17 @@ public class Generator {
     //is_const, boolean
     //2.value.count
     //3.value.items
-    public void addGlobalVar(GlobalVar globalVar){
-        addBool(globalVar.isConst);
-        if(globalVar.items == null){
+    public void addGlobalVar(GVar gVar){
+        addBool(gVar.isConst);
+        if(gVar.items == null){
             int count = 8;
             long items = 0L;
             addInt(4,count);
             addLong(8,items);
         }
         else{
-            addInt(4,globalVar.items.length());
-            addString(globalVar.items);
+            addInt(4, gVar.items.length());
+            addString(gVar.items);
         }
     }
 
@@ -84,12 +84,12 @@ public class Generator {
     //global_table
     //functions.count, int
     //function_table
-    public List<Byte> generate(List<GlobalVar> global_table, List<Func> function_table){
+    public List<Byte> generate(List<GVar> global_table, List<Func> function_table){
         addInt(4,0x72303b3e);
         addInt(4,0x00000001);
 
         addInt(4,global_table.size());
-        for(GlobalVar global:global_table) addGlobalVar(global);
+        for(GVar global:global_table) addGlobalVar(global);
 
         addInt(4,function_table.size());
         for(Func fun:function_table) addFunc(fun);

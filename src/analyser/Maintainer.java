@@ -15,15 +15,14 @@ public class Maintainer {
     int global_count = 0;
     int func_count = 0;
     int local_count = 0;
-    // 当前函数
+
     Function cur_func = new Function();
-    // 上一个返回函数
     Function ret_func;
+
     public List<Symbol> symbol_table = new ArrayList<>();
-    public List<GlobalVar> global_table = new ArrayList<>();
+    public List<GVar> global_table = new ArrayList<>();
     public List<Func> function_table = new ArrayList<>();
     public List<Instruction> instructions = new ArrayList<>();
-    Inser inser;
     // 栈，用于计算
     Stack<TokenType> stack = new Stack<>();
     //0:equal
@@ -104,10 +103,10 @@ public class Maintainer {
     }
 
     // 将符号弹出符号栈
-    public void pop_operator(MyType op){
+    public void pop_operator(MyType operand){
         while(!stack.empty()){
             TokenType type = stack.pop();
-            Instruction.operate(type, instructions, op);
+            Instruction.operate(type, operand, this);
         }
     }
 
@@ -121,6 +120,12 @@ public class Maintainer {
         return -1;
     }
 
+    //每次分析一个新的函数前初始化
+    public void init_function_analyse(){
+        instructions = new ArrayList<>();
+        reset_local_count();
+    }
+
     // 指令列表中添加指令
     public void add_instrction(Instruction instruction){
         instructions.add(instruction);
@@ -128,10 +133,8 @@ public class Maintainer {
 
     // 全局或局部变量指令
     public void add_var_instruction(){
-        Instruction instruction;
-        if(level == 1) instruction = new Instruction(Operation.GLOBA,global_count);
-        else instruction = new Instruction(Operation.LOCA,local_count);
-        instructions.add(instruction);
+        if(level == 1) instructions.add(Inser.globa(global_count));
+        else instructions.add(Inser.loca(local_count));
     }
 
     // 返回当前指令在指令集中的位置
@@ -170,8 +173,8 @@ public class Maintainer {
 
     //添加字符串全局变量
     public void add_global_str(String str){
-        GlobalVar globalVar = new GlobalVar(global_count,true,str.length(),str);
-        global_table.add(globalVar);
+        GVar gVar = new GVar(global_count,true,str.length(),str);
+        global_table.add(gVar);
         Instruction instruction = new Instruction(Operation.PUSH,global_count);
         instructions.add(instruction);
         global_count += 1;
@@ -180,7 +183,7 @@ public class Maintainer {
     //添加全局或局部的常量
     public void check_global_const(){
         if(level == 1){
-            global_table.add(new GlobalVar(global_count,true));
+            global_table.add(new GVar(global_count,true));
             Instruction ins = new Instruction(Operation.GLOBA,global_count);
             instructions.add(ins);
         }
@@ -191,7 +194,7 @@ public class Maintainer {
     }
 
     public void check_global_let(){
-        if(level == 1) global_table.add(new GlobalVar(global_count,false));
+        if(level == 1) global_table.add(new GVar(global_count,false));
     }
 
     //添加变量或常量到symbol_table
@@ -210,8 +213,8 @@ public class Maintainer {
 
     //加进全局表
     public void add_function_global(String name){
-        GlobalVar globalVar = new GlobalVar(global_count,true,name.length(),name);
-        global_table.add(globalVar);
+        GVar gVar = new GVar(global_count,true,name.length(),name);
+        global_table.add(gVar);
     }
 
     public Function get_func_symbol_at(int index){
@@ -262,10 +265,10 @@ public class Maintainer {
     }
 
     //弹栈没有运算的符号
-    public void peek_and_operate(MyType type){
+    public void peek_and_operate(MyType operand){
         while( (!stack.empty()) && (stack.peek() != TokenType.L_PAREN) ){
             TokenType tt = stack.pop();
-            Instruction.operate(tt,instructions,type);
+            Instruction.operate(tt,operand,this);
         }
     }
 
@@ -275,7 +278,7 @@ public class Maintainer {
     }
 
     //stack计算
-    public void stack_calculate(MyType type,TokenType lt){
+    public void stack_calculate(MyType operand,TokenType lt){
         int l,r;
         TokenType rt;
         l = TokenType.toInt(lt);
@@ -284,7 +287,7 @@ public class Maintainer {
             r = TokenType.toInt(rt);
             if(priority[r][l] == 1){
                 rt = stack.pop();
-                Instruction.operate(rt,instructions,type);
+                Instruction.operate(rt,operand,this);
             }
             else break;
         }
@@ -294,13 +297,13 @@ public class Maintainer {
     //main函数返回值分配和调用操作
     public List<Instruction> alloc_and_call_main(List<Instruction> init,Function main,int main_num){
         if(main.returnType == MyType.VOID){
-            init.add(new Instruction(Operation.STACKALLOC,0));
-            init.add(new Instruction(Operation.CALL,main_num));
+            init.add(Inser.stackallocZero);
+            init.add(Inser.call(main_num));
         }
         else{
-            init.add(new Instruction(Operation.STACKALLOC,1));
-            init.add(new Instruction(Operation.CALL,main_num));
-            init.add(new Instruction(Operation.POPN,1));
+            init.add(Inser.stackallocOne);
+            init.add(Inser.call(main_num));
+            init.add(Inser.popn);
         }
         return init;
     }
@@ -315,11 +318,9 @@ public class Maintainer {
 
     //添加start函数
     public void add_start(List<Instruction> init){
-        GlobalVar globalVar = new GlobalVar(global_count,true,6,"_start");
-        global_table.add(globalVar);
-        Func func = new Func(0,"_start",global_count,0,0,0,init);
-        function_table.add(0,func);
-        global_count++;
+        global_table.add(new GVar(global_count,true,6,"_start"));
+        function_table.add(0, new Func(0,"_start",global_count,0,0,0,init));
+        global_count += 1;
     }
 
     public Instruction call_function(Function function,boolean isLib){

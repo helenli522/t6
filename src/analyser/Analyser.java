@@ -79,26 +79,19 @@ public class Analyser {
         maintainer.func_count = 1;
         List<Instruction> init = maintainer.instructions;
         while (check(TokenType.FN_KW)){
-            maintainer.instructions = new ArrayList<>();
-            maintainer.reset_local_count();
+            maintainer.init_function_analyse();
             analyseFunction();
-            maintainer.global_count++;
-            maintainer.func_count++;
+            maintainer.func_count += 1;
+            maintainer.global_count += 1;
         }
-        int main_pos = maintainer.find_symbol_all("main");
-        if(main_pos == -1)
+        int m = maintainer.find_symbol_all("main");
+        if(m == -1)
             throw new AnalyzeError(ErrorCode.NoMainError, peekedToken.getEndPos());
-       maintainer.set_start(init,main_pos);
-    }
-
-    public void addCount(){
-        if(maintainer.level == 1) maintainer.global_count++;
-        else maintainer.local_count++;
+       maintainer.set_start(init,m);
     }
 
     public void checkDuplicateVar(String name, MyType type, boolean isConst) throws AnalyzeError {
-        int pos = maintainer.find_symbol_scope(name);
-        if(pos != -1) {
+        if(maintainer.find_symbol_scope(name) != -1) {
             throw new AnalyzeError(ErrorCode.DuplicateDecl, peekedToken.getEndPos());
         }
         else {
@@ -153,6 +146,11 @@ public class Analyser {
         expect(TokenType.SEMICOLON);
         maintainer.ins_store();
         addCount();
+    }
+
+    public void addCount(){
+        if(maintainer.level == 1) maintainer.global_count++;
+        else maintainer.local_count++;
     }
 
     //ty -> IDENT 只能是void和int
@@ -442,7 +440,7 @@ public class Analyser {
         MyType exprType = analyseExpr();
         while(maintainer.peek() != TokenType.L_PAREN){
             TokenType tt = maintainer.pop();
-            Instruction.operate(tt, maintainer.instructions, exprType);
+            Instruction.operate(tt, exprType, maintainer);
         }
         maintainer.pop();
         expect(TokenType.R_PAREN);

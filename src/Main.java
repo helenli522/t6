@@ -27,8 +27,8 @@ public class Main {
         //todo:delete debug code
         System.out.println("global_table大小:" + maintainer.get_global_size());
         System.out.println("global_table:");
-        for(GlobalVar globalVar : maintainer.global_table){
-            System.out.println(globalVar);
+        for(GVar gVar : maintainer.global_table){
+            System.out.println(gVar);
         }
         System.out.println("function:");
         for(Func func : maintainer.function_table){

@@ -1,5 +1,6 @@
 package instruction;
 
+import analyser.Maintainer;
 import util.MyType;
 import tokenizer.TokenType;
 
@@ -53,81 +54,62 @@ public class Instruction {
     }
 
     // 操作指令入栈
-    public static void operate(TokenType type, List<Instruction> instructions, MyType op){
-        Instruction newIns;
+    public static void operate(TokenType sign, MyType operand, Maintainer maintainer){
         boolean isInt = true;
-        if(op != MyType.INT) isInt = false;
-        if(type == TokenType.PLUS){
-            if(isInt) newIns = new Instruction(Operation.ADDI,-1);
-            else newIns = new Instruction(Operation.ADDF,-1);
-            instructions.add(newIns);
+        if(operand != MyType.INT) isInt = false;
+        if(sign == TokenType.PLUS){
+            if(isInt) maintainer.add_instrction(Inser.addI);
+            else maintainer.add_instrction(Inser.addF);
         }
-        else if(type == TokenType.MINUS){
-            if(isInt) newIns = new Instruction(Operation.SUBI,-1);
-            else newIns = new Instruction(Operation.SUBF,-1);
-            instructions.add(newIns);
+        else if(sign == TokenType.MINUS){
+            if(isInt) maintainer.add_instrction(Inser.subI);
+            else maintainer.add_instrction(Inser.subF);
         }
-        else if(type == TokenType.MUL){
-            if(isInt) newIns = new Instruction(Operation.MULI,-1);
-            else newIns = new Instruction(Operation.MULF,-1);
-            instructions.add(newIns);
+        else if(sign == TokenType.MUL){
+            if(isInt) maintainer.add_instrction(Inser.mulI);
+            else maintainer.add_instrction(Inser.mulF);
         }
-        else if(type == TokenType.DIV){
-            if(isInt) newIns = new Instruction(Operation.DIVI,-1);
-            else newIns = new Instruction(Operation.DIVF,-1);
-            instructions.add(newIns);
+        else if(sign == TokenType.DIV){
+            if(isInt) maintainer.add_instrction(Inser.divI);
+            else maintainer.add_instrction(Inser.divF);
         }
-        else if(type == TokenType.EQ){
-            if(isInt) newIns = new Instruction(Operation.CMPI,-1);
-            else newIns = new Instruction(Operation.CMPF,-1);
-            instructions.add(newIns);
+        else if(sign == TokenType.EQ){
+            if(isInt) maintainer.add_instrction(Inser.cmpI);
+            else maintainer.add_instrction(Inser.cmpF);
             // 这里逻辑再想一下
-            newIns = new Instruction(Operation.NOT,-1);
-            instructions.add(newIns);
+            maintainer.add_instrction(Inser.not);
         }
-        else if(type == TokenType.NEQ){
-            if(isInt) newIns = new Instruction(Operation.CMPI,-1);
-            else newIns = new Instruction(Operation.CMPF,-1);
-            instructions.add(newIns);
+        else if(sign == TokenType.NEQ){
+            if(isInt) maintainer.add_instrction(Inser.cmpI);
+            else maintainer.add_instrction(Inser.cmpF);
         }
-        else if(type == TokenType.LT){  //<
-            if(isInt) newIns = new Instruction(Operation.CMPI,-1);
-            else newIns = new Instruction(Operation.CMPF,-1);
-            instructions.add(newIns);
-            newIns = new Instruction(Operation.SETLT,-1);
-            instructions.add(newIns);
+        else if(sign == TokenType.LT){  //<
+            if(isInt) maintainer.add_instrction(Inser.cmpI);
+            else maintainer.add_instrction(Inser.cmpF);
+            maintainer.add_instrction(Inser.setLt);
         }
-        else if(type == TokenType.LE){  //<=
-            if(isInt) newIns = new Instruction(Operation.CMPI,-1);
-            else newIns = new Instruction(Operation.CMPF,-1);
-            instructions.add(newIns);
+        else if(sign == TokenType.LE){  //<=
+            if(isInt) maintainer.add_instrction(Inser.cmpI);
+            else maintainer.add_instrction(Inser.cmpF);
             // not>表示<=
-            newIns = new Instruction(Operation.SETGT,-1);
-            instructions.add(newIns);
-            newIns = new Instruction(Operation.NOT,-1);
-            instructions.add(newIns);
+            maintainer.add_instrction(Inser.setGt);
+            maintainer.add_instrction(Inser.not);
         }
-        else if(type == TokenType.GT){  //>
-            if(isInt) newIns = new Instruction(Operation.CMPI,-1);
-            else newIns = new Instruction(Operation.CMPF,-1);
-            instructions.add(newIns);
-            newIns = new Instruction(Operation.SETGT,-1);
-            instructions.add(newIns);
+        else if(sign == TokenType.GT){  //>
+            if(isInt) maintainer.add_instrction(Inser.cmpI);
+            else maintainer.add_instrction(Inser.cmpF);
+            maintainer.add_instrction(Inser.setGt);
         }
-        else if(type == TokenType.GE){  //>=
-            if(isInt) newIns = new Instruction(Operation.CMPI,-1);
-            else newIns = new Instruction(Operation.CMPF,-1);
-            instructions.add(newIns);
+        else if(sign == TokenType.GE){  //>=
+            if(isInt) maintainer.add_instrction(Inser.cmpI);
+            else maintainer.add_instrction(Inser.cmpF);
             // not<表示>=
-            newIns = new Instruction(Operation.SETLT,-1);
-            instructions.add(newIns);
-            newIns = new Instruction(Operation.NOT,-1);
-            instructions.add(newIns);
+            maintainer.add_instrction(Inser.setLt);
+            maintainer.add_instrction(Inser.not);
         }
-        else if(type == TokenType.NEGATE){
-            if(isInt) newIns = new Instruction(Operation.NEGI,-1);
-            else newIns = new Instruction(Operation.NEGF,-1);
-            instructions.add(newIns);
+        else if(sign == TokenType.NEGATE){
+            if(isInt) maintainer.add_instrction(Inser.negI);
+            else maintainer.add_instrction(Inser.negF);
         }
         return;
     }

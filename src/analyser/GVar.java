@@ -1,20 +1,20 @@
 package analyser;
 
-public class GlobalVar {
+public class GVar {
     public int globalNum; //从0开始？
     public boolean isConst; //对应输出的is_const
     public int count; //对应输出的value.count
     public String items; //对应输出的value.items
 
-    public GlobalVar() {
+    public GVar() {
     }
 
-    public GlobalVar(int globalNum, boolean isConst) {
+    public GVar(int globalNum, boolean isConst) {
         this.globalNum = globalNum;
         this.isConst = isConst;
     }
 
-    public GlobalVar(int globalNum, boolean isConst, int count, String items) {
+    public GVar(int globalNum, boolean isConst, int count, String items) {
         this.globalNum = globalNum;
         this.isConst = isConst;
         this.count = count;
