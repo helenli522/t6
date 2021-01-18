@@ -174,8 +174,7 @@ public class Maintainer {
     public void add_global_str(String str){
         GVar gVar = new GVar(global_count,true,str.length(),str);
         global_table.add(gVar);
-        Instruction instruction = new Instruction(Operation.PUSH,global_count);
-        instructions.add(instruction);
+        instructions.add(Inser.push((long)global_count));
         global_count += 1;
     }
 
@@ -183,12 +182,10 @@ public class Maintainer {
     public void check_global_const(){
         if(level == 1){
             global_table.add(new GVar(global_count,true));
-            Instruction ins = new Instruction(Operation.GLOBA,global_count);
-            instructions.add(ins);
+            instructions.add(Inser.globa(global_count));
         }
         else{
-            Instruction ins = new Instruction(Operation.LOCA,local_count);
-            instructions.add(ins);
+            instructions.add(Inser.loca(local_count));
         }
     }
 
