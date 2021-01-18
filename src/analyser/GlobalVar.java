@@ -1,4 +1,4 @@
-package symbol;
+package analyser;
 
 public class GlobalVar {
     public int globalNum; //从0开始？

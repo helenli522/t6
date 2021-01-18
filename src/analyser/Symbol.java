@@ -1,4 +1,4 @@
-package symbol;
+package analyser;
 
 import util.MyType;
 
@@ -7,7 +7,6 @@ public class Symbol {
         MyType type;
         int level;
         boolean isVar;
-        boolean isFunc;
 
         public String getName() {
                 return name;
@@ -41,22 +40,13 @@ public class Symbol {
                 isVar = var;
         }
 
-        public boolean isFunc() {
-                return isFunc;
-        }
-
-        public void setFunc(boolean func) {
-                isFunc = func;
-        }
-
         public Symbol() {
         }
 
-        public Symbol(String name, MyType type, int level, boolean isVar, boolean isFunc) {
+        public Symbol(String name, MyType type, int level, boolean isVar) {
                 this.name = name;
                 this.type = type;
                 this.level = level;
                 this.isVar = isVar;
-                this.isFunc = isFunc;
         }
 }

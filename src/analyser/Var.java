@@ -1,4 +1,4 @@
-package symbol;
+package analyser;
 
 import util.MyType;
 
@@ -12,8 +12,8 @@ public class Var extends Symbol {
     public Var() {
     }
 
-    public Var(String name, MyType type, int level, boolean isVar, boolean isFunc, boolean isConst, int localNum, int globalNum, int fNum, int paramNum) {
-        super(name, type, level, isVar, isFunc);
+    public Var(String name, MyType type, int level, boolean isVar, boolean isConst, int localNum, int globalNum, int fNum, int paramNum) {
+        super(name, type, level, isVar);
         this.isConst = isConst;
         this.localNum = localNum;
         this.globalNum = globalNum;

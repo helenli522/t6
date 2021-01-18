@@ -1,12 +1,10 @@
-package symbol;
+package analyser;
 
 import instruction.Instruction;
-import util.MyType;
 
-import java.util.ArrayList;
 import java.util.List;
 
-public class Function extends Symbol {
+public class Func {
     public int fNum; //函数编号
     public String fName; //函数名
     public int globalPos; //函数名称在全局变量中的位置
@@ -15,20 +13,7 @@ public class Function extends Symbol {
     public int locSlots; //局部变量占据的 slot 数
     public List<Instruction> body;
 
-    List<Var> paramList = new ArrayList<>(); //参数列表
-    MyType returnType; //函数返回值类型
-
-    public Function() {
-    }
-
-    public Function(String name, MyType type, int level, boolean isVar, boolean isFunc, List<Var> paramList, MyType returnType) {
-        super(name, type, level, isVar, isFunc);
-        this.paramList = paramList;
-        this.returnType = returnType;
-    }
-
-    public Function(String name, MyType type, int level, boolean isVar, boolean isFunc, int fNum, String fName, int globalPos, int returnSlots, int paramSlots, int locSlots, List<Instruction> body) {
-        super(name, type, level, isVar, isFunc);
+    public Func(int fNum, String fName, int globalPos, int returnSlots, int paramSlots, int locSlots, List<Instruction> body) {
         this.fNum = fNum;
         this.fName = fName;
         this.globalPos = globalPos;
@@ -94,38 +79,11 @@ public class Function extends Symbol {
         this.body = body;
     }
 
-    public List<Var> getParamList() {
-        return paramList;
-    }
-
-    public void setParamList(List<Var> paramList) {
-        this.paramList = paramList;
-    }
-
-    public MyType getReturnType() {
-        return returnType;
-    }
-
-    public void setReturnType(MyType returnType) {
-        this.returnType = returnType;
-    }
-
     @Override
     public String toString() {
-        return "Function{" +
-                "name=" + name +
-                ", type=" + type +
-                ", level=" + level +
-                ", paramList=" + paramList +
-                ", returnType=" + returnType +
-                '}';
-    }
-
-    //检查输出时用
-    public String toStr(){
-        return "Function{" +
+        return "Func{" +
                 "fNum=" + fNum +
-                ", fName=" + fName +
+                ", fName='" + fName + '\'' +
                 ", globalPos=" + globalPos +
                 ", returnSlots=" + returnSlots +
                 ", paramSlots=" + paramSlots +
