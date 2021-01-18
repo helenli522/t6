@@ -9,6 +9,8 @@ public enum MyType {
     STRING,
     FUNCTION,
     CHAR,
+    BREAK,
+    CONTINUE,
     UNKNOWN; //用于报错
 
     //转换成字符串，用于传参

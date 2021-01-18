@@ -12,7 +12,7 @@ import java.util.Scanner;
 public class Main {
     public static void main(String[] args) throws CompileError, IOException {
         File file = new File(args[0]);
-//        File file = new File("F:\\jiao_now\\JavaProjects\\c0_tests\\0-basic\\ac4-1-fastpow.input.txt");
+//        File file = new File("F:\\jiao_now\\JavaProjects\\c0_tests\\0-basic\\ac3-1-calc.input.txt");
         Scanner scanner = new Scanner(file);
         StringIter it = new StringIter(scanner);
         Tokenizer tokenizer = new Tokenizer(it);
@@ -31,8 +31,8 @@ public class Main {
             System.out.println(gVar);
         }
         System.out.println("function:");
-        for(Func func : maintainer.function_table){
-            System.out.println(func);
+        for(FVar FVar : maintainer.function_table){
+            System.out.println(FVar);
         }
 
         Generator generator = new Generator();

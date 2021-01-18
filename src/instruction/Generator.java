@@ -1,6 +1,6 @@
 package instruction;
 
-import analyser.Func;
+import analyser.FVar;
 import analyser.GVar;
 
 import java.util.ArrayList;
@@ -58,14 +58,14 @@ public class Generator {
     //loc_slots,int
     //body.count,int
     //body.items
-    public void addFunc(Func func){
-        addInt(4,func.globalPos);
-        addInt(4,func.returnSlots);
-        addInt(4,func.getParamSlots());
-        addInt(4,func.locSlots);
-        addInt(4,func.getBody().size());
+    public void addFunc(FVar FVar){
+        addInt(4, FVar.globalPos);
+        addInt(4, FVar.returnSlots);
+        addInt(4, FVar.getParamSlots());
+        addInt(4, FVar.locSlots);
+        addInt(4, FVar.getBody().size());
 
-        List<Instruction> instructions = func.getBody();
+        List<Instruction> instructions = FVar.getBody();
         for(Instruction instruction : instructions){
             int op = instruction.getOperation().getNode(); //指令,int
             addInt(1,op);
@@ -84,7 +84,7 @@ public class Generator {
     //global_table
     //functions.count, int
     //function_table
-    public List<Byte> generate(List<GVar> global_table, List<Func> function_table){
+    public List<Byte> generate(List<GVar> global_table, List<FVar> function_table){
         addInt(4,0x72303b3e);
         addInt(4,0x00000001);
 
@@ -92,7 +92,7 @@ public class Generator {
         for(GVar global:global_table) addGlobalVar(global);
 
         addInt(4,function_table.size());
-        for(Func fun:function_table) addFunc(fun);
+        for(FVar fun:function_table) addFunc(fun);
         return byteList;
     }
 }

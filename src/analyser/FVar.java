@@ -4,7 +4,7 @@ import instruction.Instruction;
 
 import java.util.List;
 
-public class Func {
+public class FVar {
     public int fNum; //函数编号
     public String fName; //函数名
     public int globalPos; //函数名称在全局变量中的位置
@@ -13,7 +13,7 @@ public class Func {
     public int locSlots; //局部变量占据的 slot 数
     public List<Instruction> body;
 
-    public Func(int fNum, String fName, int globalPos, int returnSlots, int paramSlots, int locSlots, List<Instruction> body) {
+    public FVar(int fNum, String fName, int globalPos, int returnSlots, int paramSlots, int locSlots, List<Instruction> body) {
         this.fNum = fNum;
         this.fName = fName;
         this.globalPos = globalPos;

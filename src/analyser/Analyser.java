@@ -1,12 +1,12 @@
 package analyser;
 
 import error.*;
-import instruction.Inser;
 import instruction.Instruction;
 import instruction.Operation;
 import tokenizer.Token;
 import tokenizer.TokenType;
 import tokenizer.Tokenizer;
+import util.BCUtils;
 import util.IfUtils;
 import util.MyType;
 import util.TypeUtils;
@@ -18,6 +18,7 @@ public class Analyser {
     Tokenizer tokenizer;
     Token peekedToken = null;
     public Maintainer maintainer = new Maintainer();
+    public BCUtils bcUtils = new BCUtils();
 
     public Analyser(Tokenizer tokenizer) {
         this.tokenizer = tokenizer;
@@ -129,14 +130,14 @@ public class Analyser {
     public void analyseConstDeclStmt() throws CompileError {
         expect(TokenType.CONST_KW);
         Token token = expect(TokenType.IDENT);
-        String name = token.getValue().toString();
+        String identStr = token.getValue().toString();
         expect(TokenType.COLON);
         MyType type = MyType.toType(parseType());
         if(type == MyType.VOID) throw new AnalyzeError(ErrorCode.VoidTypeError,peekedToken.getEndPos());
 
         //填表
         maintainer.check_global_const();
-        checkDuplicateVar(name,type,true);
+        checkDuplicateVar(identStr,type,true);
 
         expect(TokenType.ASSIGN);
         MyType exprType = analyseExpr();
@@ -155,11 +156,11 @@ public class Analyser {
 
     //ty -> IDENT 只能是void和int
     public Token parseType() throws CompileError {
-        Token tt = peek();
-        String str = (String) tt.getValue();
+        Token peek = peek();
+        String str = (String) peek.getValue();
         if(str.equals("void") || str.equals("int") || str.equals("double")){
             next();
-            return tt;
+            return peek;
         }
         else throw new AnalyzeError(ErrorCode.InvalidType, peekedToken.getEndPos());
     }
@@ -174,8 +175,8 @@ public class Analyser {
         expect(TokenType.FN_KW);
         maintainer.reset_local_count();
         Token token = expect(TokenType.IDENT);
-        String name = token.getValue().toString();
-        checkDuplicateFunc(name);
+        String identStr = token.getValue().toString();
+        checkDuplicateFunc(identStr);
 
         expect(TokenType.L_PAREN);
         List<Var> paramList = new ArrayList<>();
@@ -189,7 +190,7 @@ public class Analyser {
         int returnSlot = 0;
         if(returnType == MyType.INT || returnType == MyType.DOUBLE) returnSlot = 1;
 
-        maintainer.add_function_two_tables(name,paramList,returnType,returnSlot);
+        maintainer.add_function_two_tables(identStr,paramList,returnType,returnSlot);
         analyseBlockStmt();
         maintainer.set_func_attr();
 
@@ -197,34 +198,34 @@ public class Analyser {
             maintainer.ins_ret();
         else if(maintainer.cur_is_ret() == false)
             throw new AnalyzeError(ErrorCode.FuncRetError, peekedToken.getStartPos());
-        maintainer.add_function_global(name);
+        maintainer.add_function_global(identStr);
     }
 
     //function_param_list -> function_param (',' function_param)*
     public List<Var> analyseFunctionParamList() throws CompileError {
         List<Var> paramList = new ArrayList<>();
-        int paramNum = 0;
-        paramList.add(analyseFunctionParam(paramNum));
+        paramList.add(analyseFunctionParam(0));
+        int paramNum = 1;
         while (check(TokenType.COMMA)){
-            paramNum++;
             next();
             paramList.add(analyseFunctionParam(paramNum));
+            paramNum++;
         }
         return paramList;
     }
 
     //function_param -> 'const'? IDENT ':' ty
     public Var analyseFunctionParam(int paramNum) throws CompileError {
-        boolean isConst = false;
+        boolean cp = false; //const param?
         if(check(TokenType.CONST_KW)){
-            isConst = true;
             next();
+            cp = true;
         }
         Token token = expect(TokenType.IDENT);
-        String name = token.getValue().toString();
+        String identStr = token.getValue().toString();
         expect(TokenType.COLON);
         MyType type = MyType.toType(parseType());
-        return maintainer.add_param(name,type,isConst,paramNum);
+        return maintainer.add_param(identStr,type,cp,paramNum);
     }
 
     //expr ->
@@ -236,46 +237,45 @@ public class Analyser {
     //    | group_expr
     //     (binary_operator expr||'as' ty)*
     public MyType analyseExpr() throws CompileError{
-        MyType type = MyType.INT;
-        boolean isVar = true;
+        MyType resType = MyType.INT;
         if(check(TokenType.MINUS)){
-            type = analyseNegateExpr();
+            resType = analyseNegateExpr();
         }
         else if(check(TokenType.UINT_LITERAL) || check(TokenType.DOUBLE_LITERAL) || check(TokenType.STRING_LITERAL) || check(TokenType.CHAR_LITERAL)){
-            type = analyseLiteralExpr();
+            resType = analyseLiteralExpr();
         }
         else if(check(TokenType.L_PAREN)){
-            type = analyseGroupExpr();
+            resType = analyseGroupExpr();
         }
         else if(check(TokenType.IDENT)){ //call | assign | ident
             Token token = next();
-            type = parseIdent(token);
+            resType = parseIdent(token);
         }
         while (checkOperator() || check(TokenType.AS_KW)){
             if (check(TokenType.AS_KW))
-                type = analyseAsExpr(type);
+                resType = analyseAsExpr(resType);
             else
-                type = analyseBinaryOperatorExpr(type);
+                resType = analyseBinaryOperatorExpr(resType);
         }
-        return type;
+        return resType;
     }
 
-    //todo:check carefully
+    //todo:check
     private MyType parseIdent(Token token) throws CompileError{
-        String ident = token.getValue().toString();
-        MyType symbolType, res = null;
+        String identStr = token.getValue().toString();
+        MyType symbolType, res;
         boolean isLib = false;
         Function function = null;
         Var var = new Var();
-        if(maintainer.is_lib_func(ident) != null){
+        if(maintainer.is_lib_func(identStr) != null){
             //库函数
             symbolType = MyType.FUNCTION;
             isLib = true;
-            function = maintainer.is_lib_func(ident);
+            function = maintainer.is_lib_func(identStr);
         }
-        else if(maintainer.find_symbol_all(ident) != -1){
+        else if(maintainer.find_symbol_all(identStr) != -1){
             //函数或变量
-            int i = maintainer.find_symbol_all(ident);
+            int i = maintainer.find_symbol_all(identStr);
             Symbol tmp = maintainer.get_symbol_at(i);
             symbolType = tmp.getType();
             if(tmp.isVar) var = (Var) tmp;
@@ -327,9 +327,9 @@ public class Analyser {
     public MyType analyseNegateExpr() throws CompileError {
         expect(TokenType.MINUS);
         maintainer.push(TokenType.NEGATE);
-        MyType type = analyseExpr();
-        if(type == MyType.VOID) throw new AnalyzeError(ErrorCode.VoidTypeError,peekedToken.getStartPos());
-        return type;
+        MyType exprType = analyseExpr();
+        if(exprType == MyType.VOID) throw new AnalyzeError(ErrorCode.VoidTypeError,peekedToken.getStartPos());
+        return exprType;
     }
 
     //assign_expr -> l_expr '=' expr
@@ -356,9 +356,10 @@ public class Analyser {
             maintainer.ins_ftoi();
             return MyType.INT;
         }
-        if(right == MyType.VOID)
+        if(right != MyType.VOID)
+            return right;
+        else
             throw new AnalyzeError(ErrorCode.VoidTypeError, peekedToken.getStartPos());
-        return right;
     }
 
     //call_param_list -> expr (',' expr)*
@@ -399,24 +400,24 @@ public class Analyser {
 
     //literal_expr -> UINT_LITERAL | DOUBLE_LITERAL | STRING_LITERAL | CHAR_LITERAL
     public MyType analyseLiteralExpr() throws TokenizeError, AnalyzeError {
+        Token token = next();
         if(check(TokenType.UINT_LITERAL)){
-            Token token = next();
             maintainer.ins_push(Long.parseLong(token.getValue().toString()));
             return MyType.INT;
         }
         else if(check(TokenType.CHAR_LITERAL)){
-            char ch = (char) next().getValue();
+            char ch = (char) token.getValue();
             maintainer.ins_push((long) ch);
             return MyType.INT;
         }
         else if(check(TokenType.DOUBLE_LITERAL)){
-            Double db = (Double) next().getValue();
+            Double db = (Double) token.getValue();
             String binary = Long.toBinaryString(Double.doubleToRawLongBits(db));
             maintainer.ins_push(TypeUtils.strToLong(binary));
             return MyType.DOUBLE;
         }
         else if(check(TokenType.STRING_LITERAL)){
-            String str = next().getValue().toString();
+            String str = token.getValue().toString();
             maintainer.add_global_str(str);
             return MyType.STRING;
         }
@@ -427,7 +428,7 @@ public class Analyser {
 
     //ident_expr -> IDENT
     public void analyseIdentExpr(Var symbol) throws CompileError{
-        if(symbol.type == MyType.VOID)
+        if(symbol.getType() == MyType.VOID)
             throw new AnalyzeError(ErrorCode.VoidTypeError,peekedToken.getStartPos());
         maintainer.add_symbol(symbol);
         maintainer.ins_load();
@@ -438,7 +439,7 @@ public class Analyser {
         expect(TokenType.L_PAREN);
         maintainer.push(TokenType.L_PAREN);
         MyType exprType = analyseExpr();
-        while(maintainer.peek() != TokenType.L_PAREN){
+        while(TokenType.L_PAREN != maintainer.peek()){
             TokenType tt = maintainer.pop();
             Instruction.operate(tt, exprType, maintainer);
         }
@@ -480,10 +481,24 @@ public class Analyser {
         else analyseExprStmt();
     }
 
+    public void parseBreak() throws CompileError{
+        expect(TokenType.BREAK_KW);
+        boolean flag = bcUtils.checkBreak(maintainer);
+        if(!flag) throw new AnalyzeError(ErrorCode.InvalidBC,peekedToken.getStartPos());
+        expect(TokenType.SEMICOLON);
+    }
+
+    public void parseContinue() throws CompileError{
+        expect(TokenType.CONTINUE_KW);
+        boolean flag = bcUtils.checkContinue(maintainer);
+        if(!flag) throw new AnalyzeError(ErrorCode.InvalidBC,peekedToken.getStartPos());
+        expect(TokenType.SEMICOLON);
+    }
+
     //expr_stmt -> expr ';'
     public void analyseExprStmt() throws CompileError {
-        MyType type = analyseExpr();
-        maintainer.pop_operator(type);
+        MyType exprTy = analyseExpr();
+        maintainer.pop_operator(exprTy);
         expect(TokenType.SEMICOLON);
     }
 
@@ -491,80 +506,66 @@ public class Analyser {
     public void analyseIfStmt() throws CompileError{
         expect(TokenType.IF_KW);
         MyType type = analyseExpr();
-        maintainer.pop_operator(type);
         if(type == MyType.VOID)
             throw new AnalyzeError(ErrorCode.VoidTypeError,peekedToken.getStartPos());
-
+        maintainer.pop_operator(type);
         maintainer.ins_brtrueOne();
-        int to_else, before_block, after_block;
-        to_else = IfUtils.un_cond_to_else(maintainer);
+        int to_else = IfUtils.un_cond_to_else(maintainer);
 
-        before_block = maintainer.get_instructions_size();
-        analyseBlockStmt();
-        after_block = maintainer.get_instructions_size();
-
-        if(maintainer.get_ins_at(after_block-1).getOperation().equals(Operation.RET)){
-            int offset = after_block - before_block;
-            maintainer.set_operand(to_else,offset);
-
+        int a[] = analyseBlockStmt(), tmp1, tmp2;
+        if(Operation.RET == maintainer.get_ins_at(a[1]-1).getOperation()){
+            maintainer.set_operand(to_else,a[1] - a[0]);
             if(check(TokenType.ELSE_KW)){
                 expect(TokenType.ELSE_KW);
-                if(check(TokenType.L_BRACE))
-                    analyseBlockStmt();
-                else if(check(TokenType.IF_KW))
+                if(check(TokenType.IF_KW))
                     analyseIfStmt();
+                else if(check(TokenType.L_BRACE))
+                    analyseBlockStmt();
                 else throw new AnalyzeError(ErrorCode.IncompleteElse,peekedToken.getStartPos());
             }
         }
         else{
             //跳过else的指令，记录编号ins_to_end
-            int to_end, tmp, offset;
-            to_end = IfUtils.to_end(maintainer);
-
-            tmp = maintainer.get_instructions_size();
-            offset = tmp - before_block;
-            maintainer.set_operand(to_else,offset);
-
+            int to_end = IfUtils.to_end(maintainer);
+            tmp1 = maintainer.get_instructions_size();
+            maintainer.set_operand(to_else,tmp1 - a[0]);
             if(check(TokenType.ELSE_KW)){
                 expect(TokenType.ELSE_KW);
-                if(check(TokenType.L_BRACE)){
+                if(check(TokenType.IF_KW))
+                    analyseIfStmt();
+                else if(check(TokenType.L_BRACE)){
                     analyseBlockStmt();
                     maintainer.ins_brZero();
                 }
-                else if(check(TokenType.IF_KW))
-                    analyseIfStmt();
                 else throw new AnalyzeError(ErrorCode.IncompleteElse,peekedToken.getStartPos());
             }
-            offset = maintainer.get_instructions_size() - tmp;
-            maintainer.set_operand(to_end,offset);
+            maintainer.set_operand(to_end,maintainer.get_instructions_size() - tmp1);
         }
     }
 
     //while_stmt -> 'while' expr block_stmt
     public void analyseWhileStmt() throws CompileError {
         expect(TokenType.WHILE_KW);
-        int entry,jmp,exit;
+        int entry, jmp, exit;
         maintainer.add_instrction(new Instruction(Operation.BR,0));
         entry = maintainer.get_instructions_size();
-
-        MyType type = analyseExpr();
-        if(type == MyType.VOID) throw new AnalyzeError(ErrorCode.VoidTypeError,peekedToken.getStartPos());
-        maintainer.pop_operator(type);
-
-        //if true进入while
+        MyType cond = analyseExpr();
+        if(cond == MyType.VOID) throw new AnalyzeError(ErrorCode.VoidTypeError,peekedToken.getStartPos());
+        maintainer.pop_operator(cond);
         maintainer.ins_brtrueOne();
-        //无条件跳到while结束
         Instruction to_exit = new Instruction(Operation.BR,0);
         maintainer.add_instrction(to_exit);
-
         jmp = maintainer.get_instructions_size();
+
+        bcUtils.enter();
         analyseBlockStmt();
+        bcUtils.leave();
         Instruction to_entry = new Instruction(Operation.BR,0);
         maintainer.add_instrction(to_entry);
-
-        exit = maintainer.get_instructions_size();
+        exit = maintainer.get_instructions_size();// 出口
         to_entry.setOperandA(entry - exit);
         to_exit.setOperandA(exit - jmp);
+        bcUtils.handleBC(exit);
     }
 
     //return_stmt -> 'return' expr? ';'
@@ -590,13 +591,17 @@ public class Analyser {
     }
 
     //block_stmt -> '{' stmt* '}'
-    public void analyseBlockStmt() throws CompileError{
-        maintainer.level++;
+    public int[] analyseBlockStmt() throws CompileError{
+        int[] a = new int[2];
+        a[0] = maintainer.get_instructions_size();
+        maintainer.level += 1;
         expect(TokenType.L_BRACE);
         while(check(TokenType.R_BRACE) == false) analyseStmt();
         expect(TokenType.R_BRACE);
         maintainer.pop_symbols(); //delete symbols in this level
-        maintainer.level--;
+        maintainer.level -= 1;
+        a[1] = maintainer.get_instructions_size();
+        return a;
     }
 
     public void analyseEmptyStmt() throws CompileError{

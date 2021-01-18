@@ -21,7 +21,7 @@ public class Maintainer {
 
     public List<Symbol> symbol_table = new ArrayList<>();
     public List<GVar> global_table = new ArrayList<>();
-    public List<Func> function_table = new ArrayList<>();
+    public List<FVar> function_table = new ArrayList<>();
     public List<Instruction> instructions = new ArrayList<>();
     // 栈，用于计算
     Stack<TokenType> stack = new Stack<>();
@@ -105,17 +105,16 @@ public class Maintainer {
     // 将符号弹出符号栈
     public void pop_operator(MyType operand){
         while(!stack.empty()){
-            TokenType type = stack.pop();
-            Instruction.operate(type, operand, this);
+            Instruction.operate(stack.pop(), operand, this);
         }
     }
 
     // 查询函数编号
     public int get_func_num_by_name(String name){
         for(int i = function_table.size() - 1; i >= 0; i--){
-            Func func = function_table.get(i);
-            if(name.equals(func.fName))
-                return func.fNum;
+            FVar FVar = function_table.get(i);
+            if(name.equals(FVar.fName))
+                return FVar.fNum;
         }
         return -1;
     }
@@ -160,8 +159,8 @@ public class Maintainer {
     //添加符号（参数 / 局部变量 / 全局变量）
     public void add_symbol(Var var){
         if(var.paramNum != -1 && var.fNum != -1){
-            Func func = function_table.get(var.fNum-1);
-            instructions.add(new Instruction(Operation.ARGA,func.returnSlots+var.paramNum));
+            FVar FVar = function_table.get(var.fNum-1);
+            instructions.add(new Instruction(Operation.ARGA, FVar.returnSlots+var.paramNum));
         }
         else if(var.level != 1){
             instructions.add(new Instruction(Operation.LOCA,var.localNum));
@@ -207,8 +206,8 @@ public class Maintainer {
         Function function = new Function(name,MyType.FUNCTION,level,false,paramList,returnType);
         cur_func = function;
         symbol_table.add(function);
-        Func func = new Func(func_count,name,global_count,returnSlot,paramList.size(), 0,null);
-        function_table.add(func);
+        FVar FVar = new FVar(func_count,name,global_count,returnSlot,paramList.size(), 0,null);
+        function_table.add(FVar);
     }
 
     //加进全局表
@@ -319,7 +318,7 @@ public class Maintainer {
     //添加start函数
     public void add_start(List<Instruction> init){
         global_table.add(new GVar(global_count,true,6,"_start"));
-        function_table.add(0, new Func(0,"_start",global_count,0,0,0,init));
+        function_table.add(0, new FVar(0,"_start",global_count,0,0,0,init));
         global_count += 1;
     }
 
