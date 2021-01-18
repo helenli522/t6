@@ -122,7 +122,6 @@ public class Analyser {
         }
         expect(TokenType.SEMICOLON);
         addCount();
-        System.out.println(wlevel);
     }
 
     //const_decl_stmt -> 'const' IDENT ':' ty '=' expr ';'

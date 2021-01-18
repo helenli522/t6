@@ -24,7 +24,8 @@ public class BCUtils {
     public boolean addContinue(int wlevel, Maintainer maintainer) {
         Instruction br = new Instruction(BR,0);
         maintainer.add_instrction(br);
-        continues.add(new BC(MyType.CONTINUE, br, wlevel, maintainer.get_instructions_size()));
+        BC aContinue = new BC(MyType.CONTINUE, br, wlevel, maintainer.get_instructions_size());
+        continues.add(aContinue);
         return true;
     }
 
@@ -34,13 +35,13 @@ public class BCUtils {
 
     public void handleBC(int exit,int wlevel){
         for(BC aBreak : breaks){
-            if(wlevel+1 == aBreak.wnum) {
+            if(aBreak.wnum - wlevel == 1) {
                 aBreak.brins.setOperandA(exit - aBreak.p);
                 //System.out.println("break, off is "+(exit - aBreak.p));
             }
         }
         for(BC aContinue : continues){
-            if(wlevel+1 == aContinue.wnum) {
+            if(aContinue.wnum - wlevel == 1) {
                 aContinue.brins.setOperandA(exit - aContinue.p - 1);
                 //System.out.println("break, off is "+(exit - aContinue.p));
             }

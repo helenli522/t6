@@ -12,7 +12,7 @@ import java.util.Scanner;
 public class Main {
     public static void main(String[] args) throws CompileError, IOException {
         File file = new File(args[0]);
-//        File file = new File("F:\\jiao_now\\JavaProjects\\c0_tests\\6-break-continue\\ac3.input.txt");
+//        File file = new File("F:\\jiao_now\\JavaProjects\\c0_tests\\6-break-continue\\ac2-guess-v3.input.txt");
         Scanner scanner = new Scanner(file);
         StringIter it = new StringIter(scanner);
         Tokenizer tokenizer = new Tokenizer(it);
