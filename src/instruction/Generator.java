@@ -35,49 +35,6 @@ public class Generator {
         byteList.add(b);
     }
 
-    //is_const, boolean
-    //2.value.count
-    //3.value.items
-    public void addGlobalVar(GVar gVar){
-        addBool(gVar.isConst);
-        if(gVar.items == null){
-            int count = 8;
-            long items = 0L;
-            addInt(4,count);
-            addLong(8,items);
-        }
-        else{
-            addInt(4, gVar.items.length());
-            addString(gVar.items);
-        }
-    }
-
-    //name,int
-    //ret_slots,int
-    //param_slots,int
-    //loc_slots,int
-    //body.count,int
-    //body.items
-    public void addFunc(FVar FVar){
-        addInt(4, FVar.globalPos);
-        addInt(4, FVar.returnSlots);
-        addInt(4, FVar.getParamSlots());
-        addInt(4, FVar.locSlots);
-        addInt(4, FVar.getBody().size());
-
-        List<Instruction> instructions = FVar.getBody();
-        for(Instruction instruction : instructions){
-            int op = instruction.getOperation().getNode(); //指令,int
-            addInt(1,op);
-            if(instruction.getOperandA() != -1){ //操作数,long
-                if(op == 1) //PUSH
-                    addLong(8,instruction.getOperandA());
-                else
-                    addLong(4,instruction.getOperandA());
-            }
-        }
-    }
-
     //magic
     //version
     //globals.count, int
@@ -89,10 +46,39 @@ public class Generator {
         addInt(4,0x00000001);
 
         addInt(4,global_table.size());
-        for(GVar global:global_table) addGlobalVar(global);
+        for(GVar gVar : global_table) {
+            addBool(gVar.isConst);
+            if(gVar.items == null){
+                int count = 8;
+                long items = 0L;
+                addInt(4,count);
+                addLong(8,items);
+            }
+            else{
+                addInt(4, gVar.items.length());
+                addString(gVar.items);
+            }
+        }
 
         addInt(4,function_table.size());
-        for(FVar fun:function_table) addFunc(fun);
+        for(FVar fVar:function_table) {
+            addInt(4, fVar.globalPos);
+            addInt(4, fVar.returnSlots);
+            addInt(4, fVar.getParamSlots());
+            addInt(4, fVar.locSlots);
+            addInt(4, fVar.getBody().size());
+            List<Instruction> instructions = fVar.getBody();
+            for(Instruction instruction : instructions){
+                int op = instruction.getOperation().getNode(); //指令,int
+                addInt(1,op);
+                if(instruction.getOperandA() != -1){ //操作数,long
+                    if(op == 1) //PUSH
+                        addLong(8,instruction.getOperandA());
+                    else
+                        addLong(4,instruction.getOperandA());
+                }
+            }
+        }
         return byteList;
     }
 }

@@ -1,106 +1,61 @@
 package util;
 
 import analyser.Maintainer;
-import error.AnalyzeError;
-import error.CompileError;
-import error.ErrorCode;
-import instruction.Inser;
 import instruction.Instruction;
+import instruction.Operation;
 
 import java.util.ArrayList;
 import java.util.List;
 
-class BC {
-    MyType type;
-    Instruction instruction;
-    int whileCount;
-    int p;
-
-    public MyType getType() {
-        return type;
-    }
-
-    public void setType(MyType type) {
-        this.type = type;
-    }
-
-    public Instruction getInstruction() {
-        return instruction;
-    }
-
-    public void setInstruction(Instruction instruction) {
-        this.instruction = instruction;
-    }
-
-    public int getWhileCount() {
-        return whileCount;
-    }
-
-    public void setWhileCount(int whileCount) {
-        this.whileCount = whileCount;
-    }
-
-    public int getP() {
-        return p;
-    }
-
-    public void setP(int p) {
-        this.p = p;
-    }
-
-    public BC(MyType type, Instruction instruction, int whileCount, int p) {
-        this.type = type;
-        this.instruction = instruction;
-        this.whileCount = whileCount;
-        this.p = p;
-    }
-}
+import static instruction.Operation.BR;
 
 public class BCUtils {
-    public int whileLevel = 0;
     public List<BC> breaks = new ArrayList<>();
     public List<BC> continues = new ArrayList<>();
 
-    public boolean checkBreak(Maintainer maintainer) {
-        if(whileLevel > 0){
-            maintainer.add_instrction(Inser.brZero);
-            BC aBreak = new BC(MyType.BREAK, Inser.brZero, maintainer.get_instructions_size(), whileLevel);
-            breaks.add(aBreak);
-            return true;
-        }
-        return false;
+    public boolean addBreak(int wlevel, Maintainer maintainer) {
+        Instruction br = new Instruction(BR,0);
+        maintainer.add_instrction(br);
+        BC aBreak = new BC(MyType.BREAK, br, wlevel, maintainer.get_instructions_size());
+        breaks.add(aBreak);
+        return true;
     }
 
-    public boolean checkContinue(Maintainer maintainer) {
-        if(whileLevel > 0){
-            maintainer.add_instrction(Inser.brZero);
-            BC aContinue = new BC(MyType.CONTINUE, Inser.brZero, maintainer.get_instructions_size(), whileLevel);
-            continues.add(aContinue);
-            return true;
-        }
-        return false;
+    public boolean addContinue(int wlevel, Maintainer maintainer) {
+        Instruction br = new Instruction(BR,0);
+        maintainer.add_instrction(br);
+        continues.add(new BC(MyType.CONTINUE, br, wlevel, maintainer.get_instructions_size()));
+        return true;
     }
 
-    public void enter(){
-        whileLevel += 1;
+    public boolean notWhile(int wlevel){
+        return wlevel==0;
     }
 
-    public void leave(){
-        whileLevel -= 1;
-    }
-
-    public void handleBC(int exit){
+    public void handleBC(int exit,int wlevel){
         for(BC aBreak : breaks){
-            if(whileLevel == aBreak.whileCount - 1)
-                aBreak.instruction.setOperandA(exit - aBreak.p);
+            if(wlevel+1 == aBreak.wnum) {
+                aBreak.brins.setOperandA(exit - aBreak.p);
+                //System.out.println("break, off is "+(exit - aBreak.p));
+            }
         }
-        for(BC aContinue : breaks){
-            if(whileLevel == aContinue.whileCount - 1)
-                aContinue.instruction.setOperandA(exit - aContinue.p);
+        for(BC aContinue : continues){
+            if(wlevel+1 == aContinue.wnum) {
+                aContinue.brins.setOperandA(exit - aContinue.p - 1);
+                //System.out.println("break, off is "+(exit - aContinue.p));
+            }
         }
-        if (whileLevel == 0){
-            breaks = new ArrayList<>();
-            continues = new ArrayList<>();
+        if (wlevel == 0){
+            breaks.clear();
+            continues.clear();
         }
+    }
+
+    @Override
+    public String toString() {
+        return "BCUtils{" +
+                "breaks=" + breaks +
+                ", continues=" + continues +
+                '}';
     }
 }

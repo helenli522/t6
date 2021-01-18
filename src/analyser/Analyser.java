@@ -6,10 +6,7 @@ import instruction.Operation;
 import tokenizer.Token;
 import tokenizer.TokenType;
 import tokenizer.Tokenizer;
-import util.BCUtils;
-import util.IfUtils;
-import util.MyType;
-import util.TypeUtils;
+import util.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,6 +16,7 @@ public class Analyser {
     Token peekedToken = null;
     public Maintainer maintainer = new Maintainer();
     public BCUtils bcUtils = new BCUtils();
+    int wlevel = 0;
 
     public Analyser(Tokenizer tokenizer) {
         this.tokenizer = tokenizer;
@@ -124,6 +122,7 @@ public class Analyser {
         }
         expect(TokenType.SEMICOLON);
         addCount();
+        System.out.println(wlevel);
     }
 
     //const_decl_stmt -> 'const' IDENT ':' ty '=' expr ';'
@@ -457,6 +456,8 @@ public class Analyser {
     //    | return_stmt *
     //    | block_stmt *
     //    | empty_stmt *
+    //    | continue;
+    //    | break;
     public void analyseStmt() throws CompileError {
         if(check(TokenType.LET_KW)){
             analyseLetDeclStmt();
@@ -479,21 +480,13 @@ public class Analyser {
         else if(check(TokenType.SEMICOLON)){
             analyseEmptyStmt();
         }
+        else if(check(TokenType.BREAK_KW)){
+            analyseBreakStmt();
+        }
+        else if(check(TokenType.CONTINUE_KW)){
+            analyseContinueStmt();
+        }
         else analyseExprStmt();
-    }
-
-    public void parseBreak() throws CompileError{
-        expect(TokenType.BREAK_KW);
-        boolean flag = bcUtils.checkBreak(maintainer);
-        if(!flag) throw new AnalyzeError(ErrorCode.InvalidBC,peekedToken.getStartPos());
-        expect(TokenType.SEMICOLON);
-    }
-
-    public void parseContinue() throws CompileError{
-        expect(TokenType.CONTINUE_KW);
-        boolean flag = bcUtils.checkContinue(maintainer);
-        if(!flag) throw new AnalyzeError(ErrorCode.InvalidBC,peekedToken.getStartPos());
-        expect(TokenType.SEMICOLON);
     }
 
     //expr_stmt -> expr ';'
@@ -544,6 +537,22 @@ public class Analyser {
         }
     }
 
+    private void analyseBreakStmt()throws CompileError{
+        expect(TokenType.BREAK_KW);
+        if(wlevel==0)
+            throw new AnalyzeError(ErrorCode.InvalidBC,peekedToken.getStartPos());
+        bcUtils.addBreak(wlevel,maintainer);
+        expect(TokenType.SEMICOLON);
+    }
+
+    private void analyseContinueStmt()throws CompileError{
+        expect(TokenType.CONTINUE_KW);
+        if(wlevel==0)
+            throw new AnalyzeError(ErrorCode.InvalidBC,peekedToken.getStartPos());
+        bcUtils.addContinue(wlevel,maintainer);
+        expect(TokenType.SEMICOLON);
+    }
+
     //while_stmt -> 'while' expr block_stmt
     public void analyseWhileStmt() throws CompileError {
         expect(TokenType.WHILE_KW);
@@ -558,15 +567,15 @@ public class Analyser {
         maintainer.add_instrction(to_exit);
         jmp = maintainer.get_instructions_size();
 
-        bcUtils.enter();
+        wlevel++;
         analyseBlockStmt();
-        bcUtils.leave();
+        wlevel--;
         Instruction to_entry = new Instruction(Operation.BR,0);
         maintainer.add_instrction(to_entry);
         exit = maintainer.get_instructions_size();// 出口
         to_entry.setOperandA(entry - exit);
         to_exit.setOperandA(exit - jmp);
-        bcUtils.handleBC(exit);
+        bcUtils.handleBC(exit,wlevel);
     }
 
     //return_stmt -> 'return' expr? ';'
