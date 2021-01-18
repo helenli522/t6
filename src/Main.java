@@ -24,16 +24,6 @@ public class Main {
         Analyser analyser = new Analyser(tokenizer);
         Maintainer maintainer = analyser.maintainer;
         analyser.analyse();
-        //todo:delete debug code
-        System.out.println("global_table大小:" + maintainer.get_global_size());
-        System.out.println("global_table:");
-        for(GVar gVar : maintainer.global_table){
-            System.out.println(gVar);
-        }
-        System.out.println("function:");
-        for(FVar FVar : maintainer.function_table){
-            System.out.println(FVar);
-        }
 
         Generator generator = new Generator();
         List<Byte> bytes = generator.generate(maintainer.global_table, maintainer.function_table);
@@ -41,12 +31,11 @@ public class Main {
         byte[] out = new byte[len];
         for(int i = 0; i < len; i++){
             out[i] = bytes.get(i);
-            //todo:delete debug code
+            //debug code
             int bi = out[i];
             System.out.print(bi+" ");
             if((i+1)%4 == 0) System.out.println();
         }
-//        DataOutputStream outputStream = new DataOutputStream(new FileOutputStream(new File("output")));
         DataOutputStream outputStream = new DataOutputStream(new FileOutputStream(new File(args[1])));
         outputStream.write(out);
     }
