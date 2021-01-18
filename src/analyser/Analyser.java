@@ -400,24 +400,25 @@ public class Analyser {
 
     //literal_expr -> UINT_LITERAL | DOUBLE_LITERAL | STRING_LITERAL | CHAR_LITERAL
     public MyType analyseLiteralExpr() throws TokenizeError, AnalyzeError {
-        Token token = next();
+        Token token;
         if(check(TokenType.UINT_LITERAL)){
+            token = next();
             maintainer.ins_push(Long.parseLong(token.getValue().toString()));
             return MyType.INT;
         }
         else if(check(TokenType.CHAR_LITERAL)){
-            char ch = (char) token.getValue();
+            char ch = (char) next().getValue();
             maintainer.ins_push((long) ch);
             return MyType.INT;
         }
         else if(check(TokenType.DOUBLE_LITERAL)){
-            Double db = (Double) token.getValue();
+            Double db = (Double) next().getValue();
             String binary = Long.toBinaryString(Double.doubleToRawLongBits(db));
             maintainer.ins_push(TypeUtils.strToLong(binary));
             return MyType.DOUBLE;
         }
         else if(check(TokenType.STRING_LITERAL)){
-            String str = token.getValue().toString();
+            String str = next().getValue().toString();
             maintainer.add_global_str(str);
             return MyType.STRING;
         }
