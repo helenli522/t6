@@ -103,20 +103,20 @@ public class Analyser {
     public void analyseLetDeclStmt() throws CompileError {
         expect(TokenType.LET_KW);
         Token token = expect(TokenType.IDENT);
-        String name = token.getValue().toString();
+        String identStr = token.getValue().toString();
         expect(TokenType.COLON);
-        MyType type = MyType.toType(parseType());
-        if(type == MyType.VOID) throw new AnalyzeError(ErrorCode.VoidTypeError,peekedToken.getEndPos());
+        MyType declType = MyType.toType(parseType());
+        if(declType == MyType.VOID) throw new AnalyzeError(ErrorCode.VoidTypeError,peekedToken.getEndPos());
 
         //填表
         maintainer.check_global_let();
-        checkDuplicateVar(name,type,false);
+        checkDuplicateVar(identStr,declType,false);
 
         if(check(TokenType.ASSIGN)){
             next();
             maintainer.add_var_instruction();
             MyType exprType = analyseExpr();
-            if(exprType != type) //类型不匹配
+            if(exprType != declType) //类型不匹配
                 throw new AnalyzeError(ErrorCode.DeclAndExprTypeNotMatch,peekedToken.getEndPos());
             maintainer.pop_operator(exprType);
             maintainer.ins_store();

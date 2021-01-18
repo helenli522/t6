@@ -26,7 +26,7 @@ public class Inser {
     public static Instruction negI = new Instruction(Operation.NEGI,-1);// negate
     public static Instruction negF = new Instruction(Operation.NEGF,-1);
     public static Instruction setGt = new Instruction(Operation.SETGT,-1);// setGreaterThan
-    public static Instruction setLt = new Instruction(Operation.SETGT,-1);// setLessThan
+    public static Instruction setLt = new Instruction(Operation.SETLT,-1);// setLessThan
 
     public static Instruction arga(long operand){
         return new Instruction(Operation.ARGA,operand);

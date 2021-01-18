@@ -11,8 +11,8 @@ import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) throws CompileError, IOException {
-        File file = new File(args[0]);
-//        File file = new File("F:\\jiao_now\\JavaProjects\\c0_tests\\0-basic\\ac2-2-hello-world.input.txt");
+//        File file = new File(args[0]);
+        File file = new File("F:\\jiao_now\\JavaProjects\\c0_tests\\0-basic\\ac4-1-fastpow.input.txt");
         Scanner scanner = new Scanner(file);
         StringIter it = new StringIter(scanner);
         Tokenizer tokenizer = new Tokenizer(it);
@@ -47,8 +47,8 @@ public class Main {
             if((i+1)%4 == 0) System.out.println();
         }
 //        DataOutputStream outputStream = new DataOutputStream(new FileOutputStream(new File("output")));
-        DataOutputStream outputStream = new DataOutputStream(new FileOutputStream(new File(args[1])));
-        outputStream.write(out);
+//        DataOutputStream outputStream = new DataOutputStream(new FileOutputStream(new File(args[1])));
+//        outputStream.write(out);
     }
 
 }
