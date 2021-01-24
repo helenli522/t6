@@ -158,15 +158,23 @@ public class Maintainer {
 
     //添加符号（参数 / 局部变量 / 全局变量）
     public void add_symbol(Var var){
-        if(var.paramNum != -1 && var.fNum != -1){
-            FVar FVar = function_table.get(var.fNum-1);
-            instructions.add(new Instruction(Operation.ARGA, FVar.returnSlots+var.paramNum));
-        }
-        else if(var.level != 1){
-            instructions.add(new Instruction(Operation.LOCA,var.localNum));
-        }
-        else{
-            instructions.add(new Instruction(Operation.GLOBA,var.globalNum));
+        int kind = 0; //0 for local var, 1 for global var, 2 for param
+        if(var.paramNum != -1 && var.fNum != -1) kind = 2;
+        else if(var.level == 1) kind = 1;
+
+        switch (kind){
+            case 0:
+                instructions.add(new Instruction(Operation.LOCA,var.localNum));
+                break;
+            case 1:
+                instructions.add(new Instruction(Operation.GLOBA,var.globalNum));
+                break;
+            case 2:
+                FVar fVar = function_table.get(var.fNum - 1);
+                instructions.add(new Instruction(Operation.ARGA, fVar.returnSlots + var.paramNum));
+                break;
+            default:
+                break;
         }
     }
 
@@ -200,17 +208,14 @@ public class Maintainer {
 
     //加进符号表 & 函数表
     public void add_function_two_tables(String name,List<Var> paramList,MyType returnType,int returnSlot){
-        Function function = new Function(name,MyType.FUNCTION,level,false,paramList,returnType);
-        cur_func = function;
-        symbol_table.add(function);
-        FVar FVar = new FVar(func_count,name,global_count,returnSlot,paramList.size(), 0,null);
-        function_table.add(FVar);
+        cur_func = new Function(name,MyType.FUNCTION,level,false,paramList,returnType);
+        symbol_table.add(cur_func);
+        function_table.add(new FVar(func_count,name,global_count,returnSlot,paramList.size(), 0,null));
     }
 
     //加进全局表
     public void add_function_global(String name){
-        GVar gVar = new GVar(global_count,true,name.length(),name);
-        global_table.add(gVar);
+        global_table.add(new GVar(global_count,true,name.length(),name));
     }
 
     public Function get_func_symbol_at(int index){
@@ -320,26 +325,28 @@ public class Maintainer {
     }
 
     public Instruction call_function(Function function,boolean isLib){
-        Instruction ins;
+        Instruction callIns;
+        int fNum = -1;
         if(isLib){
             add_function_global(function.name);
-            ins = Inser.callname(global_count);
+            callIns = Inser.callname(global_count);
             global_count += 1;
         }
         else{
-            int fNum = get_func_num_by_name(function.name);
+            fNum = get_func_num_by_name(function.name);
             if (fNum == -1) fNum = func_count;
-            ins = Inser.call(fNum);
+            callIns = Inser.call(fNum);
         }
         if (function.returnType == MyType.VOID)
             add_instrction(Inser.stackallocZero);
         else
             add_instrction(Inser.stackallocOne);
-        return ins;
+        return callIns;
     }
 
     public boolean cur_is_ret(){
-        return ret_func.getName().equals(cur_func.getName());
+        String ret_func_name = ret_func.getName(), cur_func_name = cur_func.getName();
+        return ret_func_name.equals(cur_func_name);
     }
 
     //判断当前函数有无返回值
