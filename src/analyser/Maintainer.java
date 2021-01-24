@@ -67,54 +67,63 @@ public class Maintainer {
 
     // 是否是标准库函数
     public Function is_lib_func(String name){
+        String[] libs = {"getint", "getchar", "getdouble", "putln",
+                "putint", "putdouble", "putchar", "putstr"};
+        Var param;
         List<Var> param_list = new ArrayList<>();
         MyType ret_type = MyType.VOID;
-        if(name.equals("getdouble"))
-            ret_type = MyType.DOUBLE;
-        else if(name.equals("getint") || name.equals("getchar"))
+
+        if(name.equals(libs[0]) || name.equals(libs[1]))
             ret_type = MyType.INT;
-        else if(name.equals("putln"))
+        else if(name.equals(libs[2]))
+            ret_type = MyType.DOUBLE;
+        else if(name.equals(libs[3]))
             ret_type = MyType.VOID;
-        else if(name.equals("putint")){
-            param_list.add(new Var("para1", MyType.INT, level+1, true, false, -1, -1, -1, 0));
+        else if(name.equals(libs[4])){
+            param = new Var("para1", MyType.INT, level+1, true, false, -1, -1, -1, 0);
+            param_list.add(param);
         }
-        else if(name.equals("putdouble")){
-            param_list.add(new Var("para1", MyType.DOUBLE, level+1, true, false, -1, -1, -1, 0));
+        else if(name.equals(libs[5])){
+            param = new Var("para1", MyType.DOUBLE, level+1, true, false, -1, -1, -1, 0);
+            param_list.add(param);
         }
-        else if(name.equals("putchar")){
-            param_list.add(new Var("para1", MyType.INT, level+1, true, false, -1, -1, -1, 0));
+        else if(name.equals(libs[6])){
+            param = new Var("para1", MyType.INT, level+1, true, false, -1, -1, -1, 0);
+            param_list.add(param);
         }
-        else if(name.equals("putstr")){
-            param_list.add(new Var("para1", MyType.STRING, level+1, true, false, -1, -1, -1, 0));
+        else if(name.equals(libs[7])){
+            param = new Var("para1", MyType.STRING, level+1, true, false, -1, -1, -1, 0);
+            param_list.add(param);
         }
         else return null;
 
-        Function lib_func = new Function(name, MyType.FUNCTION, level, false, param_list, ret_type);
-        return lib_func;
+        return new Function(name, MyType.FUNCTION, level, false, param_list, ret_type);
     }
 
     // 退出一层，删除这层的符号
     public void pop_symbols(){
+        boolean isCurLevel;
         for(int i = symbol_table.size()-1; i >= 0; i--){
-            Symbol cur = symbol_table.get(i);
-            if(cur.getLevel() == level)
-                symbol_table.remove(i);
+            isCurLevel = (symbol_table.get(i).getLevel() == level);
+            if(isCurLevel) symbol_table.remove(i);
         }
     }
 
     // 将符号弹出符号栈
     public void pop_operator(MyType operand){
-        while(!stack.empty()){
+        boolean flag = stack.empty();
+        while(!flag){
             Instruction.operate(stack.pop(), operand, this);
+            flag = stack.empty();
         }
     }
 
     // 查询函数编号
     public int get_func_num_by_name(String name){
         for(int i = function_table.size() - 1; i >= 0; i--){
-            FVar FVar = function_table.get(i);
-            if(name.equals(FVar.fName))
-                return FVar.fNum;
+            FVar fVar = function_table.get(i);
+            if(name.equals(fVar.fName))
+                return fVar.fNum;
         }
         return -1;
     }
